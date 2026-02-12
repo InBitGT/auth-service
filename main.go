@@ -1,12 +1,22 @@
 package main
 
-import "github.com/gin-gonic/gin"
+import (
+	"auth-service/internal/config"
+
+	"github.com/gin-gonic/gin"
+)
 
 func main() {
+	config.Init()
+
 	router := gin.Default()
 
-	router.Use(gin.Logger())
-	router.Use(gin.Recovery())
+	router.GET("/auth-service/ping", func(c *gin.Context) {
+		c.JSON(200, gin.H{
+			"message": "pong",
+		})
+	})
 
-	router.Run()
+	port := config.GetPort()
+	router.Run(":" + port)
 }
