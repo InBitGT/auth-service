@@ -27,15 +27,28 @@ var Database = func() (db *gorm.DB) {
 		os.Getenv("DB_SCHEMA"),
 	)
 
-	if db, err := gorm.Open(postgres.New(postgres.Config{
+	db, err := gorm.Open(postgres.New(postgres.Config{
 		DSN:                  dsn,
 		PreferSimpleProtocol: true,
-	}), &gorm.Config{}); err != nil {
+	}), &gorm.Config{})
+
+	if err != nil {
 		fmt.Println("error en conexion")
 		panic(err)
-	} else {
-		fmt.Println("conexion exitosa")
-		return db
 	}
+
+	schema := os.Getenv("DB_SCHEMA")
+
+	// 1. Crear el schema si no existe
+	db.Exec(fmt.Sprintf(`CREATE SCHEMA IF NOT EXISTS "%s"`, schema))
+
+	// 2. Aplicar search_path a nivel de usuario
+	db.Exec(fmt.Sprintf(`ALTER ROLE "%s" SET search_path TO "%s"`, os.Getenv("DB_USER"), schema))
+
+	// 3. Aplicar search_path en la sesión actual
+	db.Exec(fmt.Sprintf(`SET search_path TO "%s"`, schema))
+
+	fmt.Println("conexion exitosa")
+	return db
 
 }
